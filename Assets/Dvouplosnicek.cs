@@ -69,15 +69,21 @@ public class Dvouplosnicek : MonoBehaviour
             force = new Vector2( Forsage_V2.y * vtn.x , Forsage_V2.x * vtn.y );
         */
 
-        if( rb.velocity.x > 0.1f )
+        if( rb.velocity.x > 0.2f )
             force = new Vector2( Forsage_V2.x * ( vtn.x - vtn.y ) , Forsage_V2.y * ( 1f + ( vtn.y * vtn.x ) ) * ( Mathf.Sign( vtn.y ) * rb.velocity.x / 8f ) );
         else
-        {
             force = new Vector2( Forsage_V2.y * vtn.x , Forsage_V2.x * vtn.y );
-        }
 
-        rb.drag = 0.01f * speed;
-        rb.gravityScale = 0.2f * ( 1f + this.transform.position.y / 100f );
+        if( EngineOn)
+        {
+            rb.drag = 0.01f * speed;
+            rb.gravityScale = 0.2f * ( 1f + this.transform.position.y / 100f );
+        }
+        else
+        {
+            rb.drag = 0.01f;
+            rb.gravityScale = 0.4f * ( 1f + this.transform.position.y / 100f );
+        }
 
         if( speed > 10 )
         {
@@ -86,17 +92,19 @@ public class Dvouplosnicek : MonoBehaviour
 
         if( speed < 5 && vtn.y > 0.7 ) EngineOn = false;
 
-        if( speed > 10 && Mathf.Abs( vtn.y ) < 0.3f ) EngineOn = true;
+        // Rychlost je vetsi nez 10 a rotace neni uplne kolma k zemi
+        if( speed > 10 && Mathf.Abs( vtn.y ) < 0.8f ) EngineOn = true;
+
+        // Pada dolu, rychlost vetsi nez 10 a mam alespon nejaky naklon 
+        if( rb.velocity.y < 0 && Mathf.Abs( vtn.x ) > 0.23f && speed > 10 )
+        {
+            force += new Vector2( speed * 0.3f, vtn.x * speed * 0.1f );
+        }
 
 
         if( EngineOn )
             rb.AddForce( force );
 
-        if( rb.velocity.y < 0 && Mathf.Abs( vtn.x ) < 0.23f )
-        {
-            Debug.Log( "Volny pad" );
-            rb.AddForce( new Vector2( 0 , -1f ) );
-        }
 
         if( this.transform.position.y < 0 && !resp )
             StartCoroutine( Respawn() );
@@ -137,9 +145,9 @@ public class Dvouplosnicek : MonoBehaviour
         GUILayout.Label( "Speed " + speed.ToString() );
         GUILayout.Label( "Height " + (int)this.transform.position.y );
 
-        GUILayout.Label( "Recorman MaxLevel " + (int)MaxLevel );
-        GUILayout.Label( "Recorman LowLevel " + MinLevel );
-        GUILayout.Label( "Recorman of Speed " + SpeedRecord );
+        GUILayout.Label( "Recorman MaxLevel " + (int)( MaxLevel  ) );
+        GUILayout.Label( "Recorman LowLevel " +  MinLevel  );
+        GUILayout.Label( "Recorman of Speed " + (int)SpeedRecord );
 
         GUILayout.Label( "DIR " + rb.transform.right.ToString() );
         //GUILayout.Label( "Force " + force.ToString() );
