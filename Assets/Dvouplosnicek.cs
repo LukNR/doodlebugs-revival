@@ -62,10 +62,19 @@ public class Dvouplosnicek : MonoBehaviour
         if( MinLevel > this.transform.position.y && rb.velocity.y > 0 && transform.position.y > 0 ) MinLevel = this.transform.position.y;
         if( SpeedRecord < speed ) SpeedRecord = speed;
 
+        /*     VERSION 0.1
         if( rb.velocity.x > 0 )
             force = new Vector2( Forsage_V2.x *(  vtn.x - vtn.y ) , Forsage_V2.y * ( 1f + ( vtn.y * vtn.x ) ) );
         else
             force = new Vector2( Forsage_V2.y * vtn.x , Forsage_V2.x * vtn.y );
+        */
+
+        if( rb.velocity.x > 0.1f )
+            force = new Vector2( Forsage_V2.x * ( vtn.x - vtn.y ) , Forsage_V2.y * ( 1f + ( vtn.y * vtn.x ) ) * ( Mathf.Sign( vtn.y ) * rb.velocity.x / 8f ) );
+        else
+        {
+            force = new Vector2( Forsage_V2.y * vtn.x , Forsage_V2.x * vtn.y );
+        }
 
         rb.drag = 0.01f * speed;
         rb.gravityScale = 0.2f * ( 1f + this.transform.position.y / 100f );
@@ -75,12 +84,19 @@ public class Dvouplosnicek : MonoBehaviour
             rb.AddTorque( rb.velocity.magnitude *  0.1f );
         }
 
-        if( speed < 3 && vtn.y > 0.7 ) EngineOn = false;
+        if( speed < 5 && vtn.y > 0.7 ) EngineOn = false;
 
-        if( speed > 7 && vtn.y < 0.3 ) EngineOn = true;
+        if( speed > 10 && Mathf.Abs( vtn.y ) < 0.3f ) EngineOn = true;
 
 
-        if( EngineOn ) rb.AddForce( force );
+        if( EngineOn )
+            rb.AddForce( force );
+
+        if( rb.velocity.y < 0 && Mathf.Abs( vtn.x ) < 0.23f )
+        {
+            Debug.Log( "Volny pad" );
+            rb.AddForce( new Vector2( 0 , -1f ) );
+        }
 
         if( this.transform.position.y < 0 && !resp )
             StartCoroutine( Respawn() );
@@ -108,6 +124,7 @@ public class Dvouplosnicek : MonoBehaviour
         this.transform.position = position_V3;
         this.transform.rotation = Quaternion.identity;
         rb.velocity = Vector2.zero;
+        EngineOn = true;
 
        resp = false;
         yield return null;
@@ -124,7 +141,7 @@ public class Dvouplosnicek : MonoBehaviour
         GUILayout.Label( "Recorman LowLevel " + MinLevel );
         GUILayout.Label( "Recorman of Speed " + SpeedRecord );
 
-        //GUILayout.Label( "DIR " + rb.transform.right.ToString() );
+        GUILayout.Label( "DIR " + rb.transform.right.ToString() );
         //GUILayout.Label( "Force " + force.ToString() );
 
 
