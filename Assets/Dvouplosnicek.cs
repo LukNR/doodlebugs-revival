@@ -5,6 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class Dvouplosnicek : MonoBehaviour
 {
+
+
     public Rigidbody2D rb;
 
     public Vector2 Forsage_V2;
@@ -16,6 +18,10 @@ public class Dvouplosnicek : MonoBehaviour
 
     public bool EngineOn;
 
+    public GameObject Explosion_GO;
+
+    private Vector3 position_V3;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -23,6 +29,8 @@ public class Dvouplosnicek : MonoBehaviour
     void Start()
     {
         EngineOn = true;
+        position_V3 = transform.position;
+        MinLevel = transform.position.y;
     }
 
     void Update() {
@@ -37,6 +45,11 @@ public class Dvouplosnicek : MonoBehaviour
     }
 
     private float speed;
+    private Vector2 force;
+    private bool resp;
+    private float MaxLevel;
+    private float MinLevel;
+    private float SpeedRecord;
 
     // something with physics
     void FixedUpdate()
@@ -44,10 +57,18 @@ public class Dvouplosnicek : MonoBehaviour
 
         speed = rb.velocity.magnitude;
         Vector3 vtn = rb.transform.right.normalized;
-        Vector2 force = new Vector2( Forsage_V2.x *(  vtn.x - vtn.y ) , Forsage_V2.y * ( 1f + ( vtn.y * vtn.x ) ) );
+
+        if( MaxLevel < this.transform.position.y ) MaxLevel = this.transform.position.y;
+        if( MinLevel > this.transform.position.y && rb.velocity.y > 0 && transform.position.y > 0 ) MinLevel = this.transform.position.y;
+        if( SpeedRecord < speed ) SpeedRecord = speed;
+
+        if( rb.velocity.x > 0 )
+            force = new Vector2( Forsage_V2.x *(  vtn.x - vtn.y ) , Forsage_V2.y * ( 1f + ( vtn.y * vtn.x ) ) );
+        else
+            force = new Vector2( Forsage_V2.y * vtn.x , Forsage_V2.x * vtn.y );
 
         rb.drag = 0.01f * speed;
-        //rb.angularDrag = 
+        rb.gravityScale = 0.2f * ( 1f + this.transform.position.y / 100f );
 
         if( speed > 10 )
         {
@@ -56,10 +77,40 @@ public class Dvouplosnicek : MonoBehaviour
 
         if( speed < 3 && vtn.y > 0.7 ) EngineOn = false;
 
-        if( speed > 5 && vtn.y < 0.3 ) EngineOn = true;
+        if( speed > 7 && vtn.y < 0.3 ) EngineOn = true;
 
 
         if( EngineOn ) rb.AddForce( force );
+
+        if( this.transform.position.y < 0 && !resp )
+            StartCoroutine( Respawn() );
+
+        if( transform.position.x > 500 ) transform.position = new Vector3( 0 , transform.position.y , transform.position.z );
+
+    }
+
+    public IEnumerator Respawn()
+    {
+        resp = true;
+
+        GameObject ex = Instantiate( Explosion_GO , this.transform );
+        ex.SetActive( true );
+        ex.transform.parent = null;
+
+        if( TryGetComponent( out SpriteRenderer sr ) )
+            sr.enabled = false;
+
+        yield return new WaitForSeconds( 1f );
+
+        Destroy( ex );
+
+        if( sr ) sr.enabled = true;
+        this.transform.position = position_V3;
+        this.transform.rotation = Quaternion.identity;
+        rb.velocity = Vector2.zero;
+
+       resp = false;
+        yield return null;
 
     }
 
@@ -68,7 +119,15 @@ public class Dvouplosnicek : MonoBehaviour
         GUILayout.Label( "Engine " + EngineOn );
         GUILayout.Label( "Speed " + speed.ToString() );
         GUILayout.Label( "Height " + (int)this.transform.position.y );
-        GUILayout.Label( "DIR " + rb.transform.right.ToString() );
+
+        GUILayout.Label( "Recorman MaxLevel " + (int)MaxLevel );
+        GUILayout.Label( "Recorman LowLevel " + MinLevel );
+        GUILayout.Label( "Recorman of Speed " + SpeedRecord );
+
+        //GUILayout.Label( "DIR " + rb.transform.right.ToString() );
+        //GUILayout.Label( "Force " + force.ToString() );
+
+
     }
 
     public void Flip() {
